@@ -1,4 +1,3 @@
-# Book-of-Secret-Knowledge
 <p align="center">
   <a href="https://github.com/trimstray/the-book-of-secret-knowledge">
     <img src="https://github.com/trimstray/the-book-of-secret-knowledge/blob/master/static/img/the-book-of-secret-knowledge-preview.png" alt="Master">
