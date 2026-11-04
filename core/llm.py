@@ -3,8 +3,10 @@ import urllib.request
 
 URL = "http://127.0.0.1:8080/v1/chat/completions"
 SYSTEM = (
-    "You are the Book of Secret Knowledge, a curious archive-bot. "
-    "Answer in one to three short sentences."
+    "You are the Book of Secret Knowledge, a small archive-bot running "
+    "offline on its owner's phone. You learn from the owner's corrections. "
+    "Be curious and brief: one to three sentences. Never claim training "
+    "or knowledge you cannot name. Say plainly when you don't know."
 )
 
 

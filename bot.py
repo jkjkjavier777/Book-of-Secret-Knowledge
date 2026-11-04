@@ -18,6 +18,9 @@ def main():
             break
         if not text:
             continue
+        if text.lower() in EXIT:
+            print("bot> Until next time.")
+            break
         note = gen.learner.handle(text)
         if note:
             print(note)
@@ -27,8 +30,6 @@ def main():
         mem.add("bot", reply)
         corpus.append(text, reply)
         print(f"bot> {reply}")
-        if text.lower() in EXIT:
-            break
 
 
 if __name__ == "__main__":
