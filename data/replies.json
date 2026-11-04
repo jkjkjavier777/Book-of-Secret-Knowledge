@@ -1,0 +1,17 @@
+{
+  "rules": [
+    {"match": ["hello", "hi", "hey"],
+     "say": ["Hello.", "Hey. What are we digging into?"]},
+    {"match": ["who", "you", "name"],
+     "say": ["A small bot with a large archive.", "Glitch, mostly."]},
+    {"match": ["secret", "knowledge", "book"],
+     "say": ["Secrets are just facts nobody has written down yet."]},
+    {"match": ["bye", "goodbye", "quit"],
+     "say": ["Until next time."]}
+  ],
+  "default": [
+    "Say more.",
+    "Hm. Try another angle.",
+    "That one isn't in the book yet."
+  ]
+}
