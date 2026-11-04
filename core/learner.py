@@ -21,13 +21,14 @@ class Learner:
             self.data = {}
         self.data.setdefault("scores", {})
         self.data.setdefault("corrections", {})
-        self.last = None  # (normalized input, reply)
+        self.last = None    # (normalized input, reply, raw input)
+        self.to_log = None  # (raw input, answer worth training on)
 
     def _save(self):
         PATH.write_text(json.dumps(self.data, indent=2))
 
     def observe(self, text, reply):
-        self.last = (norm(text), reply)
+        self.last = (norm(text), reply, text)
 
     def correction_for(self, text):
         options = self.data["corrections"].get(norm(text))
@@ -39,15 +40,17 @@ class Learner:
 
     def handle(self, text):
         """Feedback commands. Returns a note, or None if text is normal chat."""
+        self.to_log = None
         text = text.strip()
         if text not in ("+", "-") and not CUE.match(text):
             return None
         if not self.last:
             return "(nothing to correct yet)"
-        key, reply = self.last
+        key, reply, raw = self.last
         scores = self.data["scores"]
         if text == "+":
             scores[reply] = scores.get(reply, 0) + 1
+            self.to_log = (raw, reply)
             note = "(kept)"
         elif text == "-":
             scores[reply] = scores.get(reply, 0) - 1
@@ -56,6 +59,7 @@ class Learner:
             new = CUE.match(text).group(1).strip()
             self.data["corrections"].setdefault(key, []).append(new)
             scores[reply] = scores.get(reply, 0) - 1
+            self.to_log = (raw, new)
             note = "(learned)"
         self._save()
         return note

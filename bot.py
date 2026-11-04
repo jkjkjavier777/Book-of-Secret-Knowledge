@@ -9,7 +9,7 @@ def main():
     gen = Generator()
     mem = Memory()
     print("Book of Secret Knowledge. 'quit' leaves.")
-    print("+ / - rate the last reply. 'say it like this: ...' corrects it.")
+    print("+ keeps a reply. - drops it. 'say it like this: ...' corrects it.")
     while True:
         try:
             text = input("you> ").strip()
@@ -24,11 +24,12 @@ def main():
         note = gen.learner.handle(text)
         if note:
             print(note)
+            if gen.learner.to_log:
+                corpus.append(*gen.learner.to_log)
             continue
         mem.add("you", text)
         reply = gen.reply(text, mem.history())
         mem.add("bot", reply)
-        corpus.append(text, reply)
         print(f"bot> {reply}")
 
 
