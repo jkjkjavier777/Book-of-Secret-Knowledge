@@ -2,7 +2,7 @@ import json
 import re
 from pathlib import Path
 
-from core import llm
+from core import llm, prompt
 from core.learner import Learner
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -15,13 +15,14 @@ def _words(text):
 
 
 class Generator:
-    """The only door to the model. Corrections, gated model, then rules."""
+    """The only door to the model. Corrections, LLM, gated NumPy model, rules."""
 
     def __init__(self):
         data = json.loads(REPLIES.read_text())
         self.rules = data["rules"]
         self.default = data["default"]
         self.learner = Learner()
+        self.last_notes = []
         self.model = None
         if CHECKPOINT.exists():
             try:
@@ -33,16 +34,16 @@ class Generator:
     def reply(self, text, history=()):
         out = self.learner.correction_for(text)
         if not out:
-            out = llm.ask(list(history), text, self._notes())
+            out = llm.ask(list(history), text, self._notes(text))
         if not out and self.model:
             out = self._from_model(text, history)
         out = out or self._from_rules(text)
         self.learner.observe(text, out)
         return out
 
-    def _notes(self):
-        c = self.learner.data["corrections"]
-        return [f'When asked "{k}", answer: {a[-1]}' for k, a in c.items()][-10:]
+    def _notes(self, text):
+        self.last_notes = prompt.build(text, self.learner, self.rules)
+        return self.last_notes
 
     def _trusted(self):
         texts = [s for r in self.rules for s in r["say"]] + self.default
