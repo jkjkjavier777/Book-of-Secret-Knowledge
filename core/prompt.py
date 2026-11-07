@@ -1,12 +1,44 @@
 import re
 from pathlib import Path
 
-CORPUS = Path(__file__).resolve().parent.parent / "store" / "corpus.txt"
-STOP = {"the", "a", "an", "is", "are", "to", "of", "and", "it", "in", "me", "i", "do", "does"}
+ROOT = Path(__file__).resolve().parent.parent
+CORPUS = ROOT / "store" / "corpus.txt"
+FACTS = ROOT / "data" / "facts.txt"
+STOP = {
+    "the", "a", "an", "is", "are", "was", "to", "of", "and", "it", "in", "me", "i",
+    "do", "does", "what", "who", "when", "where", "why", "how", "tell", "about",
+    "you", "your", "my", "this", "that", "for", "on", "with",
+}
 
 
 def _w(text):
     return {w for w in re.findall(r"[a-z']+", text.lower()) if w not in STOP}
+
+
+def load_facts():
+    try:
+        lines = FACTS.read_text().splitlines()
+    except OSError:
+        return []
+    return [l.strip() for l in lines if l.strip() and not l.startswith("#")]
+
+
+def add_fact(text):
+    text = " ".join(text.split())
+    if not text:
+        return "(usage: /fact <one sentence>)"
+    if text.lower() in {f.lower() for f in load_facts()}:
+        return "(already known)"
+    FACTS.parent.mkdir(exist_ok=True)
+    with FACTS.open("a") as f:
+        f.write(text + "\n")
+    return "(fact saved)"
+
+
+def fact_summary():
+    facts = load_facts()
+    tail = "\n".join("  " + f for f in facts[-5:])
+    return f"({len(facts)} facts)" + ("\n" + tail if tail else "")
 
 
 def _pairs():
@@ -37,10 +69,18 @@ def _examples(learner):
 
 
 def build(text, learner, rules, k=3):
-    """Notes for the LLM: your closest approved answers, plus one matching rule."""
+    """Notes for the LLM: matching facts, closest approved answers, one rule."""
     said = _w(text)
     if not said:
         return []
+    notes = []
+    hits = []
+    for fact in load_facts():
+        s = len(said & _w(fact)) / len(said)
+        if s > 0:
+            hits.append((s, fact))
+    hits.sort(key=lambda t: -t[0])
+    notes += [f"Fact: {f[:200]}" for _, f in hits[:k]]
     scored = []
     for q, a in _examples(learner):
         qw = _w(q)
@@ -49,7 +89,7 @@ def build(text, learner, rules, k=3):
             if s > 0:
                 scored.append((s, q, a))
     scored.sort(key=lambda t: -t[0])
-    notes = [f'When asked "{q}", a good answer is: {a[:200]}' for _, q, a in scored[:k]]
+    notes += [f'When asked "{q}", a good answer is: {a[:200]}' for _, q, a in scored[:k]]
     best, top = None, 0
     for r in rules:
         s = len(said & set(r["match"]))
